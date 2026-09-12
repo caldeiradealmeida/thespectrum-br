@@ -26,6 +26,7 @@ export async function sendReportEmail(input: { to: string; resultUrl: string; la
     from,
     to: input.to,
     subject: `Seu relatório The Spectrum: ${input.label}`,
+    replyTo: process.env.EMAIL_REPLY_TO || undefined,
     html,
   });
   if (error) {

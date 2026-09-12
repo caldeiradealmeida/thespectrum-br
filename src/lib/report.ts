@@ -4,7 +4,8 @@ import { AXES, QUESTIONS, SCALE_LABELS } from "./instrument";
 import { READINGS } from "./readings";
 import { Answers, Scores, axisDescription, intensity, profileLabel, side, strongestPositions } from "./scoring";
 
-export const REPORT_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-5";
+export const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-5";
+export const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4.1-mini";
 
 export interface ReportResult {
   markdown: string;
@@ -12,32 +13,68 @@ export interface ReportResult {
 }
 
 /**
- * Relatório da camada 2. Com ANTHROPIC_API_KEY, gera um texto narrativo
- * personalizado; sem a chave, monta um relatório determinístico a partir das
- * descrições dos eixos, para o produto nunca ficar sem resposta.
+ * Relatório da camada 2. Usa OpenAI (OPENAI_API_KEY) ou Anthropic
+ * (ANTHROPIC_API_KEY), o que estiver configurado — OpenAI tem prioridade se
+ * as duas existirem. Sem chave, monta um relatório determinístico a partir
+ * das descrições dos eixos, para o produto nunca ficar sem resposta.
  */
 export async function generateReport(scores: Scores, answers: Answers): Promise<ReportResult> {
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) return { markdown: fallbackReport(scores, answers), model: "template" };
+  const userPrompt = buildUserPrompt(scores, answers);
   try {
-    const client = new Anthropic({ apiKey: key });
-    const msg = await client.messages.create({
-      model: REPORT_MODEL,
-      max_tokens: 1800,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: buildUserPrompt(scores, answers) }],
-    });
-    const text = msg.content
-      .filter((b): b is Anthropic.TextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("\n")
-      .trim();
-    if (!text) throw new Error("resposta vazia");
-    return { markdown: text, model: REPORT_MODEL };
+    if (process.env.OPENAI_API_KEY) {
+      const text = await callOpenAI(userPrompt);
+      return { markdown: text, model: OPENAI_MODEL };
+    }
+    if (process.env.ANTHROPIC_API_KEY) {
+      const text = await callAnthropic(userPrompt);
+      return { markdown: text, model: ANTHROPIC_MODEL };
+    }
+    return { markdown: fallbackReport(scores, answers), model: "template" };
   } catch (err) {
     console.error("[spectrum] falha ao gerar relatório por IA; usando template", err);
     return { markdown: fallbackReport(scores, answers), model: "template-fallback" };
   }
+}
+
+async function callOpenAI(userPrompt: string): Promise<string> {
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: OPENAI_MODEL,
+      temperature: 0.7,
+      max_tokens: 1800,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userPrompt },
+      ],
+    }),
+  });
+  if (!res.ok) throw new Error(`OpenAI ${res.status}: ${await res.text()}`);
+  const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+  const text = data.choices?.[0]?.message?.content?.trim();
+  if (!text) throw new Error("resposta vazia");
+  return text;
+}
+
+async function callAnthropic(userPrompt: string): Promise<string> {
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const msg = await client.messages.create({
+    model: ANTHROPIC_MODEL,
+    max_tokens: 1800,
+    system: SYSTEM_PROMPT,
+    messages: [{ role: "user", content: userPrompt }],
+  });
+  const text = msg.content
+    .filter((b): b is Anthropic.TextBlock => b.type === "text")
+    .map((b) => b.text)
+    .join("\n")
+    .trim();
+  if (!text) throw new Error("resposta vazia");
+  return text;
 }
 
 const SYSTEM_PROMPT = `Você escreve relatórios de posicionamento político para o The Spectrum, um instrumento brasileiro com três eixos: Economia (Estado ↔ Mercado), Costumes (Progressista ↔ Conservador) e Instituições e segurança (Garantista ↔ Ordem). Escores vão de −100 a +100; o sinal negativo aponta para o primeiro polo de cada eixo.

@@ -37,7 +37,7 @@ npm run build && npm start   # produção local
 node tests/e2e.mjs           # fluxo completo (com o servidor rodando)
 ```
 
-Sem `SUPABASE_*` o app funciona com armazenamento em memória (bom para testar; os dados somem ao reiniciar). Sem `ANTHROPIC_API_KEY` o relatório usa o template. Sem `RESEND_API_KEY` o e-mail não é enviado, mas o relatório aparece na tela.
+Sem `SUPABASE_*` o app funciona com armazenamento em memória (bom para testar; os dados somem ao reiniciar). Sem `OPENAI_API_KEY`/`ANTHROPIC_API_KEY` o relatório usa o template. Sem `RESEND_API_KEY` o e-mail não é enviado, mas o relatório aparece na tela.
 
 ## Deploy na Vercel
 
