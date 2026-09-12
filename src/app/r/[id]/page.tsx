@@ -54,6 +54,7 @@ export default async function ResultPage({ params, searchParams }: { params: Par
   ]);
 
   const url = `${siteUrl()}/r/${id}`;
+  const showAvg = !!pct && pct.n >= 10;
   const showCandidates = unlocked && candidatesEnabled();
   const alignment = showCandidates ? computeAlignment(scores).slice(0, 5) : [];
 
@@ -73,11 +74,16 @@ export default async function ResultPage({ params, searchParams }: { params: Par
             key={axis.id}
             axis={axis}
             score={scores[axis.id]}
+            average={showAvg ? pct![`${axis.id}_avg`] : null}
             percentile={pct && pct.n >= 30 ? pct[`${axis.id}_pct`] : null}
           />
         ))}
-        {pct && pct.n >= 30 && (
-          <p className="text-xs text-muted mt-2 mb-0">Comparação com {pct.n.toLocaleString("pt-BR")} participantes até agora.</p>
+        {showAvg && (
+          <p className="text-xs text-muted mt-3 mb-0 flex items-center gap-2">
+            <span className="inline-block h-3 w-3 rounded-full bg-navy" /> você
+            <span className="inline-block h-3 w-3 rounded-full border-2 border-accent bg-cream ml-2" /> média de{" "}
+            {pct!.n.toLocaleString("pt-BR")} participantes até agora
+          </p>
         )}
       </div>
 
@@ -98,9 +104,9 @@ export default async function ResultPage({ params, searchParams }: { params: Par
 
       <div className="mt-8">
         <p className="kicker mb-2">Compartilhe</p>
-        <ShareButtons url={url} label={result.label} />
+        <ShareButtons url={url} label={result.label} resultId={id} />
         <p className="text-xs text-muted mt-2 mb-0">
-          O link mostra apenas o seu perfil e os três escores — nunca as respostas individuais.
+          O link e as imagens mostram apenas o seu perfil e os três escores — nunca as respostas individuais.
         </p>
       </div>
 

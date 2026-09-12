@@ -32,6 +32,9 @@ export interface Percentiles {
   econ_pct: number | null;
   costumes_pct: number | null;
   instituicoes_pct: number | null;
+  econ_avg: number | null;
+  costumes_avg: number | null;
+  instituicoes_avg: number | null;
 }
 
 export interface Store {
@@ -123,6 +126,9 @@ function supabaseStore(client: SupabaseClient): Store {
         econ_pct: row?.econ_pct == null ? null : Number(row.econ_pct),
         costumes_pct: row?.costumes_pct == null ? null : Number(row.costumes_pct),
         instituicoes_pct: row?.instituicoes_pct == null ? null : Number(row.instituicoes_pct),
+        econ_avg: row?.econ_avg == null ? null : Number(row.econ_avg),
+        costumes_avg: row?.costumes_avg == null ? null : Number(row.costumes_avg),
+        instituicoes_avg: row?.instituicoes_avg == null ? null : Number(row.instituicoes_avg),
       };
     },
   };
@@ -143,6 +149,7 @@ function memoryStore(): Store {
   const mem = (g.__spectrumMem ??= init());
   const pct = (all: number[], v: number) =>
     all.length ? Math.round((100 * all.filter((x) => x < v).length) / all.length) : null;
+  const avg = (all: number[]) => (all.length ? Math.round(all.reduce((a, b) => a + b, 0) / all.length) : null);
   return {
     async createResult({ id, version, scores, label, token, answers, uf, ageRange }) {
       mem.results.set(id, {
@@ -186,6 +193,9 @@ function memoryStore(): Store {
         econ_pct: pct(all.map((r) => r.econ), scores.econ),
         costumes_pct: pct(all.map((r) => r.costumes), scores.costumes),
         instituicoes_pct: pct(all.map((r) => r.instituicoes), scores.instituicoes),
+        econ_avg: avg(all.map((r) => r.econ)),
+        costumes_avg: avg(all.map((r) => r.costumes)),
+        instituicoes_avg: avg(all.map((r) => r.instituicoes)),
       };
     },
   };
