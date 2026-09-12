@@ -4,7 +4,7 @@ import { chromium } from "playwright";
 
 const base = process.argv[2] ?? "http://localhost:3000";
 const shots = process.argv[3] ?? null;
-const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, proxy: process.env.HTTPS_PROXY ? { server: process.env.HTTPS_PROXY } : undefined });
 const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
 const shot = async (name) => shots && page.screenshot({ path: `${shots}/${name}.png`, fullPage: true });
 
