@@ -1,5 +1,6 @@
 /**
- * Instrumento brasileiro do The Spectrum — versão 1.
+ * Instrumento brasileiro do The Spectrum — versão 2 (revisão de 12/09/2026 após
+ * teste com usuários: C4, C5, C7, I4 e I8 reescritos para uma ideia só).
  *
  * Três eixos, oito itens por eixo, escala Likert de 7 pontos.
  * Metade dos itens de cada eixo é formulada em cada direção (chaveamento
@@ -15,7 +16,7 @@
  * polo positivo; `key = −1`, para o polo negativo.
  */
 
-export const INSTRUMENT_VERSION = 1;
+export const INSTRUMENT_VERSION = 2;
 
 export type AxisId = "econ" | "costumes" | "instituicoes";
 
@@ -100,21 +101,21 @@ export const QUESTIONS: Question[] = [
   { id: "C1", axis: "costumes", key: 1, topic: "Família tradicional", text: "A família tradicional é a base da sociedade e deve ser protegida pelas leis." },
   { id: "C2", axis: "costumes", key: -1, topic: "Aborto", text: "Uma mulher deve poder interromper a gravidez nas primeiras semanas, se assim decidir." },
   { id: "C3", axis: "costumes", key: 1, topic: "Drogas", text: "O uso recreativo de drogas, incluindo a maconha, deve continuar proibido." },
-  { id: "C4", axis: "costumes", key: -1, topic: "Cotas", text: "Cotas raciais e sociais nas universidades são justas e devem continuar." },
-  { id: "C5", axis: "costumes", key: 1, topic: "Religião e Estado", text: "Valores religiosos têm um papel legítimo nas decisões públicas e nas leis." },
+  { id: "C4", axis: "costumes", key: -1, topic: "Cotas raciais", text: "Cotas raciais nas universidades públicas são justas e devem continuar." },
+  { id: "C5", axis: "costumes", key: 1, topic: "Religião e leis", text: "É legítimo que leis sejam baseadas em valores religiosos, como nas discussões sobre aborto e casamento." },
   { id: "C6", axis: "costumes", key: -1, topic: "Educação e diversidade", text: "As escolas devem ensinar sobre diversidade sexual e de gênero." },
-  { id: "C7", axis: "costumes", key: 1, topic: "Ambiente e agro", text: "A preservação ambiental não pode travar o crescimento do agronegócio e da mineração." },
+  { id: "C7", axis: "costumes", key: 1, topic: "Licenciamento ambiental", text: "Licenças ambientais deveriam ser mais rápidas e menos exigentes para não travar o agronegócio e a mineração." },
   { id: "C8", axis: "costumes", key: -1, topic: "Direitos LGBT", text: "Casais do mesmo sexo devem ter exatamente os mesmos direitos, incluindo o de adotar." },
 
   // ------------------------------------------------ Instituições e segurança
   { id: "I1", axis: "instituicoes", key: 1, topic: "Maioridade penal", text: "Reduzir a maioridade penal para 16 anos ajudaria a combater a criminalidade." },
   { id: "I2", axis: "instituicoes", key: -1, topic: "Controle da polícia", text: "A polícia precisa de mais controle externo sobre o uso da força, não de mais liberdade." },
   { id: "I3", axis: "instituicoes", key: 1, topic: "Armas", text: "O cidadão sem antecedentes deve ter facilidade para comprar e portar armas." },
-  { id: "I4", axis: "instituicoes", key: -1, topic: "STF", text: "O Supremo Tribunal Federal é essencial para proteger a democracia, mesmo quando decide contra a maioria." },
+  { id: "I4", axis: "instituicoes", key: -1, topic: "STF e Congresso", text: "O STF deve poder derrubar leis aprovadas pelo Congresso quando entender que elas violam a Constituição." },
   { id: "I5", axis: "instituicoes", key: 1, topic: "Forças Armadas", text: "Em crises graves, as Forças Armadas podem ter um papel na garantia da ordem interna." },
   { id: "I6", axis: "instituicoes", key: -1, topic: "Urnas e eleições", text: "A urna eletrônica é confiável e o resultado das eleições deve ser respeitado." },
   { id: "I7", axis: "instituicoes", key: 1, topic: "Penas", text: "Penas mais duras e prisões mais rigorosas são a forma mais eficaz de reduzir o crime." },
-  { id: "I8", axis: "instituicoes", key: -1, topic: "Direitos humanos", text: "Direitos humanos valem para todos, inclusive para quem cometeu crimes." },
+  { id: "I8", axis: "instituicoes", key: -1, topic: "Direitos de quem comete crimes", text: "Mesmo quem comete crimes graves deve manter todos os direitos que a Constituição garante a qualquer cidadão." },
 ];
 
 export const SCALE_MIN = 1;
