@@ -4,13 +4,14 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { AXES } from "@/lib/instrument";
-import { axisDescription, intensity, side } from "@/lib/scoring";
+import { axisDescription, intensity, notableFact, side } from "@/lib/scoring";
 import { getStore } from "@/lib/db";
 import { siteUrl } from "@/lib/site";
 import { candidatesEnabled, computeAlignment } from "@/lib/candidates";
 import { AxisBar } from "@/components/AxisBar";
 import { ShareButtons } from "@/components/ShareButtons";
 import { UnlockForm } from "@/components/UnlockForm";
+import { StickyCta } from "@/components/StickyCta";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +58,12 @@ export default async function ResultPage({ params, searchParams }: { params: Par
   const showAvg = !!pct && pct.n >= 10;
   const showCandidates = unlocked && candidatesEnabled();
   const alignment = showCandidates ? computeAlignment(scores).slice(0, 5) : [];
+  const fact = unlocked
+    ? null
+    : notableFact(
+        scores,
+        showAvg ? { econ: pct!.econ_avg, costumes: pct!.costumes_avg, instituicoes: pct!.instituicoes_avg } : null,
+      );
 
   return (
     <div className="max-w-3xl mx-auto pt-6 sm:pt-12">
@@ -68,7 +75,7 @@ export default async function ResultPage({ params, searchParams }: { params: Par
         partida, não como sentença.
       </p>
 
-      <div className="card p-6 sm:p-8">
+      <div id="eixos" className="card p-6 sm:p-8">
         {AXES.map((axis) => (
           <AxisBar
             key={axis.id}
@@ -87,31 +94,48 @@ export default async function ResultPage({ params, searchParams }: { params: Par
         )}
       </div>
 
-      <div className="grid gap-4 mt-6">
+      {/* ------------------------------------------------ Teaser → camada 2 */}
+      {fact && (
+        <a
+          href="#camada-2"
+          className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 rounded-[10px] border border-navy bg-white p-5 no-underline transition-colors hover:bg-cream-deep"
+        >
+          <span>
+            <span className="block font-bold text-navy leading-snug">{fact.headline}</span>
+            <span className="block text-sm text-navy-soft mt-1">{fact.detail}</span>
+          </span>
+          <span className="shrink-0 font-bold text-navy whitespace-nowrap">Veja por quê →</span>
+        </a>
+      )}
+
+      {/* --------------------------------------------- Análise por eixo (recolhida) */}
+      <div className="grid gap-3 mt-6">
         {AXES.map((axis) => {
           const s = scores[axis.id];
           const pole = side(s) === "neg" ? axis.negativePole : side(s) === "pos" ? axis.positivePole : "Centro";
+          const text = axisDescription(axis.id, s);
+          const firstSentence = text.split(/(?<=[.:;])\s/)[0];
           return (
-            <div key={axis.id} className="quiet p-5">
-              <p className="kicker mb-1">
-                {axis.name} · {pole} · {intensity(s)}
-              </p>
-              <p className="m-0 leading-relaxed">{axisDescription(axis.id, s)}</p>
-            </div>
+            <details key={axis.id} className="quiet p-5 group">
+              <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                <span className="kicker block mb-1">
+                  {axis.name} · {pole} · {intensity(s)}
+                </span>
+                <span className="block leading-relaxed group-open:hidden">
+                  {firstSentence}
+                  {firstSentence.length < text.length && (
+                    <span className="text-navy-soft text-sm ml-2 underline">ver análise completa</span>
+                  )}
+                </span>
+              </summary>
+              <p className="m-0 leading-relaxed hidden group-open:block">{text}</p>
+            </details>
           );
         })}
       </div>
 
-      <div className="mt-8">
-        <p className="kicker mb-2">Compartilhe</p>
-        <ShareButtons url={url} label={result.label} resultId={id} />
-        <p className="text-xs text-muted mt-2 mb-0">
-          O link e as imagens mostram apenas o seu perfil e os três escores — nunca as respostas individuais.
-        </p>
-      </div>
-
       {/* ---------------------------------------------------- Camada 2 */}
-      <section className="mt-14">
+      <section id="camada-2" className="mt-10 scroll-mt-6">
         {unlocked ? (
           <>
             <p className="kicker mb-2">Relatório completo</p>
@@ -166,6 +190,17 @@ export default async function ResultPage({ params, searchParams }: { params: Par
           </div>
         )}
       </section>
+
+      {/* ---------------------------------------------------- Compartilhar */}
+      <div className="mt-12">
+        <p className="kicker mb-2">Compartilhe</p>
+        <ShareButtons url={url} label={result.label} resultId={id} />
+        <p className="text-xs text-muted mt-2 mb-0">
+          O link e as imagens mostram apenas o seu perfil e os três escores — nunca as respostas individuais.
+        </p>
+      </div>
+
+      {!unlocked && <StickyCta afterId="eixos" targetId="camada-2" />}
 
       <div className="mt-12 flex flex-wrap items-center gap-4 text-sm">
         <Link href="/teste" className="btn btn-ghost btn-sm">

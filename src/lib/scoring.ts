@@ -113,3 +113,48 @@ export function strongestPositions(answers: Answers, limit = 6) {
     .sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution))
     .slice(0, limit);
 }
+
+/**
+ * Dado mais notável do perfil, para o teaser que aponta para a camada 2.
+ * Prioriza o eixo em que a pessoa mais destoa da média dos participantes
+ * (quando há média); senão, o eixo de posição mais firme.
+ */
+export function notableFact(
+  scores: Scores,
+  averages: Partial<Record<AxisId, number | null>> | null,
+): { axis: AxisId; headline: string; detail: string } | null {
+  const withAvg = AXES.map((a) => {
+    const avg = averages?.[a.id];
+    return { axis: a, score: scores[a.id], avg: avg == null ? null : avg };
+  });
+
+  const comparable = withAvg.filter((x) => x.avg != null) as { axis: (typeof AXES)[number]; score: number; avg: number }[];
+  if (comparable.length) {
+    const top = comparable.sort((a, b) => Math.abs(b.score - b.avg) - Math.abs(a.score - a.avg))[0];
+    const diff = Math.round(top.score - top.avg);
+    if (Math.abs(diff) >= 15) {
+      const towards = diff > 0 ? top.axis.positivePole : top.axis.negativePole;
+      return {
+        axis: top.axis.id,
+        headline: `Em ${top.axis.name}, você está ${Math.abs(diff)} pontos mais para “${towards}” que a média dos participantes.`,
+        detail: "Uma das suas posições é mais rara do que parece. O relatório explica por quê — e o que o outro lado diria.",
+      };
+    }
+  }
+
+  const strongest = [...AXES].sort((a, b) => Math.abs(scores[b.id]) - Math.abs(scores[a.id]))[0];
+  const s = scores[strongest.id];
+  if (Math.abs(s) < CENTER_BAND) {
+    return {
+      axis: strongest.id,
+      headline: "Você ficou perto do centro nos três eixos — o que é menos comum do que parece.",
+      detail: "O relatório mostra em quais temas você tomou partido mesmo assim, e onde está a tensão.",
+    };
+  }
+  const pole = s > 0 ? strongest.positivePole : strongest.negativePole;
+  return {
+    axis: strongest.id,
+    headline: `Sua posição mais firme é em ${strongest.name}: ${intensity(s)} para “${pole}”.`,
+    detail: "O relatório mostra o que sustenta essa posição, onde ela entra em tensão com as outras e o melhor argumento do outro lado.",
+  };
+}
