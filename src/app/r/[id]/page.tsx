@@ -12,6 +12,8 @@ import { AxisBar } from "@/components/AxisBar";
 import { ShareButtons } from "@/components/ShareButtons";
 import { UnlockForm } from "@/components/UnlockForm";
 import { StickyCta } from "@/components/StickyCta";
+import { TeaserLink } from "@/components/TeaserLink";
+import { Demographics } from "@/components/Demographics";
 
 export const dynamic = "force-dynamic";
 
@@ -95,18 +97,7 @@ export default async function ResultPage({ params, searchParams }: { params: Par
       </div>
 
       {/* ------------------------------------------------ Teaser → camada 2 */}
-      {fact && (
-        <a
-          href="#camada-2"
-          className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 rounded-[10px] border border-navy bg-white p-5 no-underline transition-colors hover:bg-cream-deep"
-        >
-          <span>
-            <span className="block font-bold text-navy leading-snug">{fact.headline}</span>
-            <span className="block text-sm text-navy-soft mt-1">{fact.detail}</span>
-          </span>
-          <span className="shrink-0 font-bold text-navy whitespace-nowrap">Veja por quê →</span>
-        </a>
-      )}
+      {fact && <TeaserLink headline={fact.headline} detail={fact.detail} resultId={id} />}
 
       {/* --------------------------------------------- Análise por eixo (recolhida) */}
       <div className="grid gap-3 mt-6">
@@ -198,6 +189,11 @@ export default async function ResultPage({ params, searchParams }: { params: Par
         <p className="text-xs text-muted mt-2 mb-0">
           O link e as imagens mostram apenas o seu perfil e os três escores — nunca as respostas individuais.
         </p>
+      </div>
+
+      {/* ------------------------------------------------ Perfil opcional */}
+      <div className="mt-10">
+        <Demographics resultId={id} initial={{ education: result.education ?? null, vote2022: result.vote_2022 ?? null }} />
       </div>
 
       {!unlocked && <StickyCta afterId="eixos" targetId="camada-2" />}

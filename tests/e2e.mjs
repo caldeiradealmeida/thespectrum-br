@@ -22,7 +22,7 @@ for (let i = 0; i < 24; i++) {
   await page.click(`.likert button:nth-child(${v})`);
   await page.waitForTimeout(220);
 }
-await page.waitForSelector("text=Duas perguntas opcionais");
+await page.waitForSelector("text=Três perguntas opcionais");
 await page.selectOption("select >> nth=0", "SP");
 await page.click("button:has-text('Ver meu resultado')");
 await page.waitForURL("**/r/**");

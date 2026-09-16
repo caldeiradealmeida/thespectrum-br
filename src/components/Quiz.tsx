@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { AXES, QUESTIONS, SCALE_LABELS, SCALE_MAX, SCALE_MIN, Question } from "@/lib/instrument";
+import { AGES, SELF_PLACEMENT_LABELS, UFS } from "@/lib/demographics";
+import { attribution, device, pixelTrack, sessionId, track } from "@/lib/tracking";
 
 const STORAGE_KEY = "spectrum:answers:v1";
 
@@ -15,11 +16,7 @@ function interleave(): Question[] {
   return out;
 }
 
-const UFS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
-const AGES = ["16-24", "25-34", "35-44", "45-59", "60+"];
-
 export function Quiz() {
-  const router = useRouter();
   const order = useMemo(() => interleave(), []);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [index, setIndex] = useState(0);
@@ -27,6 +24,7 @@ export function Quiz() {
   const [consent, setConsent] = useState(false);
   const [uf, setUf] = useState("");
   const [age, setAge] = useState("");
+  const [selfPlacement, setSelfPlacement] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
@@ -83,17 +81,31 @@ export function Quiz() {
     setPhase("sending");
     setError(null);
     try {
+      // Mesmo id no Pixel (navegador) e na Conversions API (servidor) → deduplicação.
+      const eventId = `lead-${sessionId()}-${Date.now().toString(36)}`;
       const res = await fetch("/api/results", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ answers, uf: uf || null, ageRange: age || null }),
+        body: JSON.stringify({
+          answers,
+          uf: uf || null,
+          ageRange: age || null,
+          selfPlacement,
+          eventId,
+          attribution: { ...attribution(), device: device() },
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Erro ao salvar.");
+      track("quiz_complete", { resultId: data.id });
+      pixelTrack("Lead", {}, eventId);
       try {
         sessionStorage.removeItem(STORAGE_KEY);
       } catch {}
-      router.push(`/r/${data.id}`);
+      // Navegação completa (não SPA) de propósito: o script do pixel morre
+      // aqui e não existe na página de resultado.
+      await new Promise((r) => setTimeout(r, 150));
+      window.location.assign(`/r/${data.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Algo deu errado. Tente de novo.");
       setPhase("extra");
@@ -124,7 +136,17 @@ export function Quiz() {
               .
             </span>
           </label>
-          <button className="btn btn-primary" disabled={!consent} onClick={() => setPhase("quiz")}>
+          <button
+            className="btn btn-primary"
+            disabled={!consent}
+            onClick={() => {
+              if (answered === 0) {
+                track("quiz_start");
+                pixelTrack("InitiateCheckout");
+              }
+              setPhase("quiz");
+            }}
+          >
             {answered > 0 ? "Continuar de onde parei" : "Começar"}
           </button>
         </div>
@@ -137,11 +159,35 @@ export function Quiz() {
     return (
       <div className="max-w-xl mx-auto pt-8 sm:pt-16">
         <p className="kicker mb-3">Quase lá</p>
-        <h1 className="text-3xl font-black text-navy m-0 mb-3">Duas perguntas opcionais</h1>
+        <h1 className="text-3xl font-black text-navy m-0 mb-3">Três perguntas opcionais</h1>
         <p className="text-navy-soft leading-relaxed mb-6">
-          Servem só para comparar seu resultado com pessoas do seu estado e da sua faixa etária. Você pode pular.
+          Servem só para comparar seu resultado com o de pessoas parecidas com você — e para conferir se o teste bate com
+          a sua própria percepção. Pode pular qualquer uma.
         </p>
         <div className="card p-6 grid gap-5">
+          <div className="grid gap-2">
+            <span className="font-bold text-navy text-sm">Antes de ver o resultado: como você se definiria?</span>
+            <div className="likert" role="radiogroup" aria-label="Autoposicionamento de esquerda a direita">
+              {[1, 2, 3, 4, 5, 6, 7].map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  role="radio"
+                  aria-checked={selfPlacement === v}
+                  aria-label={SELF_PLACEMENT_LABELS[v]}
+                  title={SELF_PLACEMENT_LABELS[v]}
+                  onClick={() => setSelfPlacement(selfPlacement === v ? null : v)}
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
+            <div className="flex justify-between text-xs text-muted">
+              <span>Esquerda</span>
+              <span>Centro</span>
+              <span>Direita</span>
+            </div>
+          </div>
           <label className="grid gap-1.5">
             <span className="font-bold text-navy text-sm">Estado</span>
             <select value={uf} onChange={(e) => setUf(e.target.value)} className="border border-rule rounded-md p-3 bg-white">

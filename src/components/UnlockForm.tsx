@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { track } from "@/lib/tracking";
 
 export function UnlockForm({ resultId }: { resultId: string }) {
   const router = useRouter();
@@ -23,6 +24,7 @@ export function UnlockForm({ resultId }: { resultId: string }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Não foi possível liberar o relatório.");
+      track("unlock", { resultId });
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Algo deu errado.");

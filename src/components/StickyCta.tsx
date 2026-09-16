@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { track } from "@/lib/tracking";
 
 /**
  * Barra fixa no rodapé (só mobile) que aparece depois que o usuário rolou
@@ -31,6 +32,7 @@ export function StickyCta({ afterId, targetId }: { afterId: string; targetId: st
   const visible = pastAxes && !targetVisible;
 
   function go() {
+    track("sticky_click");
     document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 

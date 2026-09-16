@@ -2,6 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
 import { SITE_NAME, SITE_TAGLINE, siteUrl } from "@/lib/site";
+import { Consent } from "@/components/Consent";
+import { MetaPixel } from "@/components/MetaPixel";
+import { PageTracker } from "@/components/PageTracker";
+
+const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
@@ -61,6 +66,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </div>
         </footer>
+        <PageTracker />
+        <MetaPixel pixelId={PIXEL_ID} />
+        <Consent enabled={!!PIXEL_ID} />
       </body>
     </html>
   );

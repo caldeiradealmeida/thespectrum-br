@@ -10,15 +10,16 @@ const CONTACT = process.env.NEXT_PUBLIC_PRIVACY_CONTACT ?? "contato@caldeiragrow
 export default function PrivacidadePage() {
   return (
     <article className="max-w-2xl mx-auto pt-8 sm:pt-14 leading-relaxed">
-      <p className="kicker mb-3">Política de privacidade · versão 1</p>
+      <p className="kicker mb-3">Política de privacidade · versão 2 · atualizada em 16/09/2026</p>
       <h1 className="text-3xl sm:text-4xl font-black text-navy m-0 mb-6">Opinião política é dado sensível. Eis o que fazemos com ela.</h1>
 
       <h2 className="text-xl font-bold text-navy mt-8 mb-2">O que coletamos</h2>
       <p>
         <strong className="text-navy">Ao fazer o teste:</strong> suas 24 respostas, os três escores calculados, o rótulo do
-        perfil, a versão do instrumento e a data. Opcionalmente, se você informar, seu estado e sua faixa etária. Nada
-        disso é ligado a nome, e-mail, endereço IP ou identificador de dispositivo. O resultado recebe um código aleatório
-        que só quem tem o link conhece.
+        perfil, a versão do instrumento e a data. Opcionalmente, se você informar, seu estado, sua faixa etária, como você
+        mesmo se define de esquerda a direita, sua escolaridade e seu voto no 2º turno de 2022 — todas perguntas que você
+        pode pular. Nada disso é ligado a nome, e-mail, endereço IP ou identificador de dispositivo. O resultado recebe um
+        código aleatório que só quem tem o link conhece.
       </p>
       <p>
         <strong className="text-navy">Se você pedir o relatório completo:</strong> seu e-mail e a sua escolha de receber ou
@@ -26,9 +27,25 @@ export default function PrivacidadePage() {
         nunca é exibido na página pública.
       </p>
       <p>
-        <strong className="text-navy">O que não coletamos:</strong> endereço IP, geolocalização, cookies de rastreamento,
-        pixels de redes sociais ou identificadores de publicidade. O único cookie usado guarda, no seu navegador, a
-        liberação do relatório do seu próprio resultado.
+        <strong className="text-navy">Medição de uso:</strong> registramos eventos anônimos de navegação (abriu a página,
+        começou o teste, concluiu, pediu o relatório, clicou em compartilhar), a origem do acesso (por exemplo, o
+        parâmetro <code>utm_source</code> de um anúncio ou o site de onde veio) e se o aparelho é celular ou computador.
+        Esses eventos não têm IP, não têm identificador do aparelho e usam um código aleatório que dura só enquanto a aba
+        está aberta.
+      </p>
+      <p>
+        <strong className="text-navy">Pixel da Meta (com o seu consentimento):</strong> para medir se os anúncios no
+        Facebook e no Instagram trazem pessoas que concluem o teste, carregamos o pixel da Meta <em>apenas</em> na página
+        inicial e na página do teste, e só depois que você aceita no aviso exibido. Ele registra que a página foi aberta,
+        que o teste começou e que foi concluído — nunca as respostas, os escores, o perfil ou a página do resultado, onde
+        o pixel não é carregado. Recusar não muda nada na sua experiência. A escolha fica gravada num cookie por 6 meses e
+        pode ser revista apagando os cookies do site. A Meta é controladora independente dos dados que o pixel dela coleta;
+        veja a política de dados da Meta.
+      </p>
+      <p>
+        <strong className="text-navy">O que não coletamos:</strong> endereço IP, geolocalização, gravação de tela ou de
+        sessão, identificadores de publicidade fora do pixel descrito acima. Além do cookie de consentimento, o único
+        cookie usado guarda, no seu navegador, a liberação do relatório do seu próprio resultado.
       </p>
 
       <h2 className="text-xl font-bold text-navy mt-8 mb-2">Base legal e finalidade</h2>

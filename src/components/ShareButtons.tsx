@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { track } from "@/lib/tracking";
 
 export function ShareButtons({ url, label, resultId }: { url: string; label: string; resultId: string }) {
   const [copied, setCopied] = useState(false);
@@ -14,7 +15,10 @@ export function ShareButtons({ url, label, resultId }: { url: string; label: str
     { name: "Threads", href: `https://www.threads.net/intent/post?text=${enc(`${text} ${url}`)}` },
   ];
 
+  const hit = (channel: string) => track("share_click", { resultId, meta: { channel } });
+
   async function copy() {
+    hit("copy");
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -28,6 +32,7 @@ export function ShareButtons({ url, label, resultId }: { url: string; label: str
    * arquivo (que lista Instagram Stories/Feed). Sem suporte, baixamos o PNG.
    */
   async function shareImage(format: "story" | "feed" | "square") {
+    hit(`instagram_${format}`);
     setBusy(format);
     try {
       const res = await fetch(`/r/${resultId}/card?f=${format}`);
@@ -54,6 +59,7 @@ export function ShareButtons({ url, label, resultId }: { url: string; label: str
   }
 
   async function nativeShare() {
+    hit("native");
     if (navigator.share) {
       try {
         await navigator.share({ title: "The Spectrum", text, url });
@@ -65,7 +71,7 @@ export function ShareButtons({ url, label, resultId }: { url: string; label: str
     <div className="grid gap-3">
       <div className="flex flex-wrap gap-2">
         {links.map((l) => (
-          <a key={l.name} href={l.href} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">
+          <a key={l.name} href={l.href} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm" onClick={() => hit(l.name)}>
             {l.name}
           </a>
         ))}

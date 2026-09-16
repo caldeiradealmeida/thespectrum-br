@@ -25,6 +25,36 @@ export interface ResultRow {
   unlock_token: string;
   uf: string | null;
   age_range: string | null;
+  education: string | null;
+  vote_2022: string | null;
+  self_placement: number | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  device: string | null;
+}
+
+export interface EventRow {
+  event: string;
+  session_id: string | null;
+  result_id: string | null;
+  path: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  device: string | null;
+  meta: Record<string, unknown> | null;
+}
+
+export interface Demographics {
+  education?: string | null;
+  vote2022?: string | null;
+}
+
+export interface AdminData {
+  results: ResultRow[];
+  unlocks: { result_id: string; created_at: string; consent_updates: boolean }[];
+  events: { event: string; session_id: string | null; created_at: string; utm_source: string | null; device: string | null }[];
 }
 
 export interface Percentiles {
@@ -47,7 +77,12 @@ export interface Store {
     answers: Answers;
     uf?: string | null;
     ageRange?: string | null;
+    selfPlacement?: number | null;
+    attribution?: { utm_source: string | null; utm_medium: string | null; utm_campaign: string | null; device: string | null } | null;
   }): Promise<void>;
+  updateDemographics(id: string, d: Demographics): Promise<void>;
+  addEvent(e: EventRow): Promise<void>;
+  adminData(since: Date): Promise<AdminData>;
   getResult(id: string): Promise<ResultRow | null>;
   getAnswers(id: string): Promise<Answers>;
   addUnlock(input: { resultId: string; email: string; consentUpdates: boolean }): Promise<void>;
@@ -61,7 +96,7 @@ export interface Store {
 
 function supabaseStore(client: SupabaseClient): Store {
   return {
-    async createResult({ id, version, scores, label, token, answers, uf, ageRange }) {
+    async createResult({ id, version, scores, label, token, answers, uf, ageRange, selfPlacement, attribution }) {
       const { error } = await client.from("spectrum_results").insert({
         id,
         instrument_version: version,
@@ -72,6 +107,11 @@ function supabaseStore(client: SupabaseClient): Store {
         unlock_token: token,
         uf: uf ?? null,
         age_range: ageRange ?? null,
+        self_placement: selfPlacement ?? null,
+        utm_source: attribution?.utm_source ?? null,
+        utm_medium: attribution?.utm_medium ?? null,
+        utm_campaign: attribution?.utm_campaign ?? null,
+        device: attribution?.device ?? null,
       });
       if (error) throw error;
       const rows = Object.entries(answers).map(([question_id, value]) => ({ result_id: id, question_id, value }));
@@ -82,6 +122,30 @@ function supabaseStore(client: SupabaseClient): Store {
       const { data, error } = await client.from("spectrum_results").select("*").eq("id", id).maybeSingle();
       if (error) throw error;
       return (data as ResultRow) ?? null;
+    },
+    async updateDemographics(id, d) {
+      const patch: Record<string, unknown> = {};
+      if (d.education !== undefined) patch.education = d.education;
+      if (d.vote2022 !== undefined) patch.vote_2022 = d.vote2022;
+      if (!Object.keys(patch).length) return;
+      const { error } = await client.from("spectrum_results").update(patch).eq("id", id);
+      if (error) throw error;
+    },
+    async addEvent(e) {
+      const { error } = await client.from("spectrum_events").insert(e);
+      if (error) throw error;
+    },
+    async adminData(since) {
+      const iso = since.toISOString();
+      const [r, u, ev] = await Promise.all([
+        client.from("spectrum_results").select("*").gte("created_at", iso).order("created_at", { ascending: false }).limit(20000),
+        client.from("spectrum_unlocks").select("result_id,created_at,consent_updates").gte("created_at", iso).limit(20000),
+        client.from("spectrum_events").select("event,session_id,created_at,utm_source,device").gte("created_at", iso).limit(50000),
+      ]);
+      if (r.error) throw r.error;
+      if (u.error) throw u.error;
+      if (ev.error) throw ev.error;
+      return { results: (r.data ?? []) as ResultRow[], unlocks: u.data ?? [], events: ev.data ?? [] };
     },
     async getAnswers(id) {
       const { data, error } = await client.from("spectrum_responses").select("question_id,value").eq("result_id", id);
@@ -142,8 +206,9 @@ function memoryStore(): Store {
     return {
       results: new Map<string, ResultRow>(),
       answers: new Map<string, Answers>(),
-      unlocks: new Map<string, { email: string; consentUpdates: boolean }[]>(),
+      unlocks: new Map<string, { email: string; consentUpdates: boolean; created_at: string }[]>(),
       reports: new Map<string, string>(),
+      events: [] as (EventRow & { created_at: string })[],
     };
   }
   const mem = (g.__spectrumMem ??= init());
@@ -151,7 +216,7 @@ function memoryStore(): Store {
     all.length ? Math.round((100 * all.filter((x) => x < v).length) / all.length) : null;
   const avg = (all: number[]) => (all.length ? Math.round(all.reduce((a, b) => a + b, 0) / all.length) : null);
   return {
-    async createResult({ id, version, scores, label, token, answers, uf, ageRange }) {
+    async createResult({ id, version, scores, label, token, answers, uf, ageRange, selfPlacement, attribution }) {
       mem.results.set(id, {
         id,
         created_at: new Date().toISOString(),
@@ -163,8 +228,34 @@ function memoryStore(): Store {
         unlock_token: token,
         uf: uf ?? null,
         age_range: ageRange ?? null,
+        education: null,
+        vote_2022: null,
+        self_placement: selfPlacement ?? null,
+        utm_source: attribution?.utm_source ?? null,
+        utm_medium: attribution?.utm_medium ?? null,
+        utm_campaign: attribution?.utm_campaign ?? null,
+        device: attribution?.device ?? null,
       });
       mem.answers.set(id, { ...answers });
+    },
+    async updateDemographics(id, d) {
+      const row = mem.results.get(id);
+      if (!row) return;
+      if (d.education !== undefined) row.education = d.education ?? null;
+      if (d.vote2022 !== undefined) row.vote_2022 = d.vote2022 ?? null;
+    },
+    async addEvent(e) {
+      mem.events.push({ ...e, created_at: new Date().toISOString() });
+    },
+    async adminData(since) {
+      const iso = since.toISOString();
+      return {
+        results: [...mem.results.values()].filter((r) => r.created_at >= iso).sort((a, b) => (a.created_at < b.created_at ? 1 : -1)),
+        unlocks: [...mem.unlocks.entries()].flatMap(([result_id, list]) =>
+          list.map((u) => ({ result_id, created_at: u.created_at, consent_updates: u.consentUpdates })),
+        ),
+        events: mem.events.filter((e) => e.created_at >= iso),
+      };
     },
     async getResult(id) {
       return mem.results.get(id) ?? null;
@@ -174,7 +265,7 @@ function memoryStore(): Store {
     },
     async addUnlock({ resultId, email, consentUpdates }) {
       const list = mem.unlocks.get(resultId) ?? [];
-      list.push({ email, consentUpdates });
+      list.push({ email, consentUpdates, created_at: new Date().toISOString() });
       mem.unlocks.set(resultId, list);
     },
     async hasUnlock(resultId) {
