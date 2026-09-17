@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     template: `%s · ${SITE_NAME}`,
   },
   description:
-    "Um teste de 24 afirmações que posiciona você em três eixos da política brasileira: Economia, Costumes e Instituições. Sem cadastro, sem rastreadores.",
+    "Um teste de 24 afirmações que posiciona você em três eixos da política brasileira: Economia, Costumes e Instituições. Sem cadastro, resultado na hora.",
   openGraph: {
     siteName: SITE_NAME,
     locale: "pt_BR",
