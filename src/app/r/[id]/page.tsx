@@ -146,7 +146,11 @@ export default async function ResultPage({ params, searchParams }: { params: Par
                   <p className="text-sm text-muted mt-0 mb-4 leading-relaxed">
                     Proximidade entre as suas posições e as posições públicas de cada chapa nos três eixos, de 0 a 100.
                     Não é previsão de voto nem recomendação: é uma régua para você conferir com o programa de governo de
-                    cada uma.
+                    cada uma.{" "}
+                    <Link href="/metodologia#candidatos" className="text-navy underline">
+                      Como calculamos e fontes
+                    </Link>
+                    .
                   </p>
                   <ol className="m-0 p-0 list-none grid gap-3">
                     {alignment.map((a) => (

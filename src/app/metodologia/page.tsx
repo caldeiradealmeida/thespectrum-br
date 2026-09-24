@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AXES, QUESTIONS, INSTRUMENT_VERSION } from "@/lib/instrument";
 import { CENTER_BAND } from "@/lib/scoring";
+import { CANDIDATES, candidatesEnabled } from "@/lib/candidates";
 
 export const metadata: Metadata = {
   title: "Metodologia",
@@ -64,6 +65,61 @@ export default function MetodologiaPage() {
         respostas se acumulam, itens que não discriminam bem serão revisados, e a versão do instrumento ficará registrada
         em cada resultado para que comparações no tempo continuem válidas.
       </p>
+
+      {candidatesEnabled() && (
+        <>
+          <h2 id="candidatos" className="text-xl font-bold text-navy mt-8 mb-2 scroll-mt-6">Proximidade com candidaturas — como calculamos</h2>
+          <p>
+            Para quem libera o relatório completo, mostramos a proximidade entre as suas posições e as de cada chapa à
+            Presidência nos mesmos três eixos. Cada chapa recebeu um escore de −100 a +100 por eixo, estimado a partir do
+            programa de governo registrado no TSE (via cobertura da imprensa) e de declarações públicas em sabatinas e
+            entrevistas de 2026. A proximidade é a distância entre o seu ponto e o da chapa no espaço dos três eixos,
+            convertida para 0–100. <strong className="text-navy">Não é previsão de voto nem recomendação</strong>: é uma
+            régua para você conferir com os programas. Todas as chapas foram tratadas com o mesmo método; a confiança
+            indica quanta evidência direta encontramos para cada uma.
+          </p>
+          <div className="overflow-x-auto -mx-2">
+            <table className="w-full text-sm mx-2">
+              <thead>
+                <tr className="text-left text-muted">
+                  <th className="py-1 pr-3 font-normal">Chapa</th>
+                  <th className="py-1 pr-3 font-normal text-right">Econ.</th>
+                  <th className="py-1 pr-3 font-normal text-right">Cost.</th>
+                  <th className="py-1 pr-3 font-normal text-right">Inst.</th>
+                  <th className="py-1 pr-3 font-normal">Confiança</th>
+                  <th className="py-1 font-normal">Fontes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {CANDIDATES.map((c) => (
+                  <tr key={c.id} className="border-t border-rule align-top">
+                    <td className="py-1.5 pr-3">
+                      <span className="font-bold text-navy">{c.name}</span> <span className="text-muted">({c.party})</span>
+                      {c.registration === "pendente" && <span className="block text-xs text-amber">registro pendente no TSE</span>}
+                    </td>
+                    <td className="py-1.5 pr-3 text-right tabular-nums">{c.positions.econ > 0 ? "+" : ""}{c.positions.econ}</td>
+                    <td className="py-1.5 pr-3 text-right tabular-nums">{c.positions.costumes > 0 ? "+" : ""}{c.positions.costumes}</td>
+                    <td className="py-1.5 pr-3 text-right tabular-nums">{c.positions.instituicoes > 0 ? "+" : ""}{c.positions.instituicoes}</td>
+                    <td className="py-1.5 pr-3">{c.confidence === "media" ? "média" : c.confidence}</td>
+                    <td className="py-1.5">
+                      {(c.source ?? "").split(" | ").filter(Boolean).map((u, i) => (
+                        <a key={u} href={u} target="_blank" rel="noopener noreferrer" className="text-navy underline mr-2 whitespace-nowrap">
+                          [{i + 1}]
+                        </a>
+                      ))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-sm text-muted">
+            Posições revisadas em {CANDIDATES[0].reviewedAt?.split("-").reverse().join("/")}. Os programas de 2026 raramente tratam de
+            aborto e drogas; onde não houve evidência direta, a estimativa segue o partido e a trajetória pública, e a
+            confiança é marcada como baixa. Encontrou um erro? Escreva para o contato na página de privacidade.
+          </p>
+        </>
+      )}
 
       <h2 className="text-xl font-bold text-navy mt-8 mb-2">O relatório completo</h2>
       <p>
