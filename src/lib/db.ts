@@ -137,15 +137,30 @@ function supabaseStore(client: SupabaseClient): Store {
     },
     async adminData(since) {
       const iso = since.toISOString();
-      const [r, u, ev] = await Promise.all([
-        client.from("spectrum_results").select("*").gte("created_at", iso).order("created_at", { ascending: false }).limit(20000),
-        client.from("spectrum_unlocks").select("result_id,created_at,consent_updates").gte("created_at", iso).limit(20000),
-        client.from("spectrum_events").select("event,session_id,created_at,utm_source,device").gte("created_at", iso).limit(50000),
+      // O PostgREST devolve no máximo 1.000 linhas por requisição (limite do
+      // servidor, independente de .limit()). Paginamos com .range().
+      const PAGE = 1000;
+      async function all<T>(build: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>, max = 100000): Promise<T[]> {
+        const out: T[] = [];
+        for (let from = 0; from < max; from += PAGE) {
+          const { data, error } = await build(from, from + PAGE - 1);
+          if (error) throw error;
+          const rows = data ?? [];
+          out.push(...rows);
+          if (rows.length < PAGE) break;
+        }
+        return out;
+      }
+      const [results, unlocks, events] = await Promise.all([
+        all<ResultRow>((a, b) => client.from("spectrum_results").select("*").gte("created_at", iso).order("created_at", { ascending: false }).range(a, b)),
+        all<{ result_id: string; created_at: string; consent_updates: boolean }>((a, b) =>
+          client.from("spectrum_unlocks").select("result_id,created_at,consent_updates").gte("created_at", iso).order("id").range(a, b),
+        ),
+        all<{ event: string; session_id: string | null; created_at: string; utm_source: string | null; device: string | null }>((a, b) =>
+          client.from("spectrum_events").select("event,session_id,created_at,utm_source,device").gte("created_at", iso).order("id").range(a, b),
+        ),
       ]);
-      if (r.error) throw r.error;
-      if (u.error) throw u.error;
-      if (ev.error) throw ev.error;
-      return { results: (r.data ?? []) as ResultRow[], unlocks: u.data ?? [], events: ev.data ?? [] };
+      return { results, unlocks, events };
     },
     async getAnswers(id) {
       const { data, error } = await client.from("spectrum_responses").select("question_id,value").eq("result_id", id);
